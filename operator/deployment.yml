@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: hostpath-provisioner
+  labels:
+    app.kubernetes.io/name: hostpath-provisioner
+    app.kubernetes.io/component: operator
+
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hostpath-provisioner
+      app.kubernetes.io/component: operator
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hostpath-provisioner
+        app.kubernetes.io/component: operator
+
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: hostpath-provisioner
+
+      containers:
+        - name: server
+          image: hostpath-provisioner
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          envFrom:
+            - configMapRef:
+                name: hostpath-provisioner
+
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+          volumeMounts:
+            - name: volumes
+              mountPath: /var/lib/volumes
+
+      volumes:
+        - name: volumes
+          hostPath:
+            path: /var/lib/volumes
+
+...
